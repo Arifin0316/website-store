@@ -39,7 +39,6 @@ const ContactPage = () => {
         message: ''
       });
       setSubmitStatus('success');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       setSubmitStatus('error');
     }
