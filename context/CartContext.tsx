@@ -20,16 +20,34 @@ interface CartContextProps {
 const CartContext = createContext<CartContextProps | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    // Initialize from localStorage if available
-    const savedCart = localStorage.getItem('cart');
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
-  // Persist cart to localStorage whenever it changes
+  // Inisialisasi cart dari localStorage setelah komponen di-mount
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
+    setIsClient(true);
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        setCart(parsedCart);
+      } catch (error) {
+        console.error('Error parsing cart from localStorage:', error);
+        localStorage.removeItem('cart'); // Hapus data yang rusak
+      }
+    }
+  }, []);
+
+  // Update localStorage ketika cart berubah
+  useEffect(() => {
+    if (isClient) {
+      try {
+        localStorage.setItem('cart', JSON.stringify(cart));
+      } catch (error) {
+        console.error('Error saving cart to localStorage:', error);
+      }
+    }
+  }, [cart, isClient]);
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => {
@@ -52,16 +70,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(id);
-    } else {
-      setCart((prev) => 
-        prev.map((item) => 
-          item.id === id ? { ...item, quantity } : item
-        )
-      );
+      return;
     }
+    setCart((prev) => 
+      prev.map((item) => 
+        item.id === id ? { ...item, quantity } : item
+      )
+    );
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+    if (isClient) {
+      localStorage.removeItem('cart');
+    }
+  };
 
   return (
     <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}>
