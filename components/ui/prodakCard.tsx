@@ -8,6 +8,7 @@ import Currency from './currency';
 import { useRouter } from 'next/navigation';
 import { MouseEventHandler, useState } from 'react';
 import usePrieviewModal from '@/hooks/use-prefiew-modal';
+import { useCart } from '@/context/CartContext'; // Import useCart
 
 interface ProdakCardProps {
   data: Prodak;
@@ -16,6 +17,7 @@ interface ProdakCardProps {
 const ProdakCard: React.FC<ProdakCardProps> = ({ data }) => {
   const router = useRouter();
   const [isLiked, setIsLiked] = useState(false);
+  const { addToCart } = useCart(); // Ambil fungsi addToCart dari context
 
   const HendleClick = () => {
     router.push(`/prodak/${data?.id}`);
@@ -30,6 +32,16 @@ const ProdakCard: React.FC<ProdakCardProps> = ({ data }) => {
   const onLike: MouseEventHandler<HTMLButtonElement> = (event) => {
     event.stopPropagation();
     setIsLiked(!isLiked);
+  };
+
+  const onAddToCart: MouseEventHandler<HTMLButtonElement> = (event) => {
+    event.stopPropagation();
+    addToCart({
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      quantity: 1,
+    }); // Menambahkan produk ke keranjang
   };
 
   return (
@@ -83,6 +95,16 @@ const ProdakCard: React.FC<ProdakCardProps> = ({ data }) => {
         <div className="text-sm text-green-600 font-semibold">
           Tersedia
         </div>
+      </div>
+
+      {/* Tombol Add to Cart */}
+      <div className="pt-4">
+        <button 
+          onClick={onAddToCart}
+          className="w-full bg-blue-600 text-white py-2 rounded-md active:scale-90 hover:bg-blue-700 transition duration-300"
+        >
+          Add to Cart
+        </button>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { Button } from './button';
 import { useState } from 'react';
 import { Catagori } from '@/types';
 import { usePathname } from 'next/navigation';
+import MenuNav from './menuNav';
 
 interface CatagoriNavProps {
   data: Catagori[];
@@ -24,7 +25,7 @@ const CatagoriNav: React.FC<CatagoriNavProps> = ({ data }) => {
   return (
     <>
       {/* Tombol Toggle */}
-      <div>
+      <div className='flex items-center'>
         <Button 
           variant={'ghost'} 
           className={`
@@ -37,6 +38,7 @@ const CatagoriNav: React.FC<CatagoriNavProps> = ({ data }) => {
         >
           Kategori
         </Button>
+        <MenuNav/>
       </div>
 
       {/* Menu Navigasi */}
