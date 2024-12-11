@@ -1,15 +1,18 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Catagori } from '@/types';
 import Link from 'next/link';
+import { Button } from './button';
+import { useState } from 'react';
+import { Catagori } from '@/types';
 import { usePathname } from 'next/navigation';
 
-interface MainnavProps {
+interface CatagoriNavProps {
   data: Catagori[];
 }
 
-const Mainnav: React.FC<MainnavProps> = ({ data }) => {
+const CatagoriNav: React.FC<CatagoriNavProps> = ({ data }) => {
+  const [show, setShow] = useState(false);
   const pathname = usePathname();
 
   const routes = data.map((route) => ({
@@ -17,16 +20,61 @@ const Mainnav: React.FC<MainnavProps> = ({ data }) => {
     label: route.name,
     active: pathname === `/catagori/${route.id}`,
   }));
+
   return (
-    <nav className="mx-4 sm:mx-6 lg:mx-8 flex items-center space-x-4 lg:space-x-6">
-      {routes.map((route) => (
-        <Link key={route.href} href={route.href} className={cn('relative text-sm font-medium transition duration-200 hover:text-blue-600', route.active ? 'text-blue-600 font-semibold' : 'text-gray-500')}>
-          {route.label}
-          {route.active && <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-blue-600 rounded-full"></span>}
-        </Link>
-      ))}
-    </nav>
+    <>
+      {/* Tombol Toggle */}
+      <div>
+        <Button 
+          variant={'ghost'} 
+          className={`
+            ${show ? 'text-blue-600 bg-blue-50' : 'text-gray-700'}
+            hover:bg-blue-50 hover:text-blue-600 
+            transition duration-300 ease-in-out
+            rounded-full px-4
+          `} 
+          onClick={() => setShow((prev) => !prev)}
+        >
+          Kategori
+        </Button>
+      </div>
+
+      {/* Menu Navigasi */}
+      {show && (
+        <div className="
+          absolute top-16 left-0 w-full 
+          max-w-full
+          bg-white shadow-2xl border-t border-gray-200 
+          z-30 py-2
+          animate-slide-down
+        ">
+          <nav className="
+            container mx-auto 
+            flex flex-col md:flex-row 
+            items-center justify-start 
+            space-y-2 md:space-y-0 md:space-x-6 
+            px-4 py-4
+          ">
+            {routes.map((route) => (
+              <Link
+                key={route.href}
+                href={route.href}
+                className={cn(
+                  'relative text-sm font-medium',
+                  'px-3 py-1 rounded-full transition duration-300 ease-in-out',
+                  route.active 
+                    ? 'bg-blue-50 text-blue-600 font-semibold' 
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                )}
+              >
+                {route.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      )}
+    </>
   );
 };
 
-export default Mainnav;
+export default CatagoriNav;

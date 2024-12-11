@@ -1,25 +1,27 @@
-import getBanners from '@/actions/get-banners';
+
+import getBanner from '@/actions/get-banners';
 import getProdaks from '@/actions/get-prodaks';
-import Banner from '@/components/banner';
-import Container from '@/components/ui/container';
+import HeroSection from '@/components/herosection';
 import ProdakList from '@/components/prodak-list';
+import Container from '@/components/ui/container';
 
-export const revalidate = 0;
 
-async function Homepage() {
+const HomePage = async () => {
+  const Banner = await getBanner();
+  const images = Banner.map((banner) => banner.imageUrl);
   const Prodak = await getProdaks({ isFiatured: true });
-  const banner = await getBanners('563bbe9d-9978-4bb3-b601-2c05bfe1fb8f');
+
 
   return (
-    <Container>
-      <div className="space-y-10 pb-10">
-        <Banner data={banner} />
-        <div className="flex flex-col gap-y-8 px-4 sm:px-6 lg:px-8">
+    <div className="bg-gray-100 py-12 ">
+      <Container>
+        <HeroSection images={images} objectFit="fill" autoPlayInterval={15000} />
+        <div className="flex flex-col gap-y-8 px-4 sm:px-6 lg:px-8 pt-12">
           <ProdakList title="prodak ungulan" item={Prodak} />
         </div>
-      </div> 
-    </Container>
+      </Container>
+    </div>
   );
-}
+};
 
-export default Homepage;
+export default HomePage;
