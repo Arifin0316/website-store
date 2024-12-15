@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { Mail, Phone, MapPin, } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import Container from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
+import Swal from 'sweetalert2';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+
 
 const ContactPage = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,9 +18,17 @@ const ContactPage = () => {
     message: ''
   });
 
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [submitStatus, setSubmitStatus] = useState('idle');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+   const { user } = useAuth();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    useEffect(() => {
+       if (user) {
+         setIsLoggedIn(true);
+       }
+     }, [user]);
+
+  const handleChange = (e: { target: { name: any; value: any; }; }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -23,8 +36,27 @@ const ContactPage = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
+
+    if (!isLoggedIn) {
+      Swal.fire({
+        title: 'Login Diperlukan',
+        text: 'Anda harus login terlebih dahulu untuk mengirim pesan',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Login Sekarang',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.push('/login'); // Sesuaikan dengan route login Anda
+        }
+      });
+      return;
+    }
+
     setSubmitStatus('sending');
 
     try {
@@ -39,8 +71,24 @@ const ContactPage = () => {
         message: ''
       });
       setSubmitStatus('success');
+
+      // Tampilkan Sweet Alert sukses
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Pesan Anda telah berhasil dikirim',
+        icon: 'success',
+        confirmButtonColor: '#3085d6'
+      });
     } catch (error) {
       setSubmitStatus('error');
+      
+      // Tampilkan Sweet Alert error
+      Swal.fire({
+        title: 'Error!',
+        text: 'Gagal mengirim pesan. Silakan coba lagi.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6'
+      });
     }
   };
 
@@ -133,18 +181,6 @@ const ContactPage = () => {
                 >
                   {submitStatus === 'sending' ? 'Mengirim...' : 'Kirim Pesan'}
                 </Button>
-
-                {submitStatus === 'success' && (
-                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-center">
-                    Pesan berhasil dikirim! Kami akan segera menghubungi Anda.
-                  </div>
-                )}
-
-                {submitStatus === 'error' && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-center">
-                    Gagal mengirim pesan. Silakan coba lagi.
-                  </div>
-                )}
               </form>
             </div>
 

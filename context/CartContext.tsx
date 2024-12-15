@@ -11,6 +11,8 @@ import {
   DocumentReference
 } from 'firebase/firestore';
 import { app } from '@/lib/firebase/init'; // Adjust the import path to your Firebase config
+import Swal from 'sweetalert2';
+import { useRouter } from 'next/navigation';
 
 // Ensure price is consistently handled as a number
 export interface CartItem {
@@ -35,6 +37,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
 
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -100,7 +103,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addToCart = async (item: CartItem) => {
-    if (!user) return;
+    if (!user) {
+      // Show SweetAlert login prompt
+      const result = await Swal.fire({
+        title: 'Silakan Login',
+        text: 'Anda harus login terlebih dahulu untuk menambahkan item ke keranjang',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Login',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+      });
+
+      // If user clicks 'Login', redirect to login page
+      if (result.isConfirmed) {
+        router.push('/login');
+      }
+      
+      return;
+    }
 
     setCart((prev) => {
       const existingItem = prev.find((cartItem) => cartItem.id === item.id);

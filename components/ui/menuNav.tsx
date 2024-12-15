@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth'; // Sesuaikan path import
 import { useRouter } from 'next/navigation';
+import Profil from './profil';
 
 const MenuNav = () => {
   const { cart } = useCart();
@@ -46,6 +47,9 @@ const MenuNav = () => {
             </span>
           )}
         </Link>
+        <div>
+          <Profil />
+        </div>
 
         {/* Separator */}
         <span className="bg-gray-300 w-[1px] h-6"></span>
