@@ -39,7 +39,7 @@ const ProdakCard: React.FC<ProdakCardProps> = ({ data }) => {
     addToCart({
       id: data.id,
       name: data.name,
-      price: data.price,
+      price: Number(data.price),
       quantity: 1,
     }); // Menambahkan produk ke keranjang
   };

@@ -1,93 +1,174 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { 
+  getFirestore, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  DocumentData,
+  DocumentReference
+} from 'firebase/firestore';
+import { app } from '@/lib/firebase/init'; // Adjust the import path to your Firebase config
 
-interface CartItem {
+// Ensure price is consistently handled as a number
+export interface CartItem {
   id: string;
   name: string;
-  price: string;
+  price: number; // Explicitly use number for price
   quantity: number;
 }
 
 interface CartContextProps {
   cart: CartItem[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (item: CartItem) => Promise<void>;
+  removeFromCart: (id: string) => Promise<void>;
+  updateQuantity: (id: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const CartContext = createContext<CartContextProps | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
-  // Inisialisasi cart dari localStorage setelah komponen di-mount
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Listen for authentication state changes
   useEffect(() => {
-    setIsClient(true);
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart);
-        setCart(parsedCart);
-      } catch (error) {
-        console.error('Error parsing cart from localStorage:', error);
-        localStorage.removeItem('cart'); // Hapus data yang rusak
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      
+      // If user is logged in, fetch their cart
+      if (currentUser) {
+        fetchUserCart(currentUser.uid);
+      } else {
+        // Reset cart and loading state when no user is logged in
+        setCart([]);
+        setIsLoading(false);
       }
-    }
-  }, []);
+    });
 
-  // Update localStorage ketika cart berubah
-  useEffect(() => {
-    if (isClient) {
-      try {
-        localStorage.setItem('cart', JSON.stringify(cart));
-      } catch (error) {
-        console.error('Error saving cart to localStorage:', error);
+    // Cleanup subscription
+    return () => unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth]);
+
+  // Fetch user's cart from Firestore
+  const fetchUserCart = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      const cartDocRef: DocumentReference<DocumentData> = doc(db, 'carts', userId);
+      const cartDoc = await getDoc(cartDocRef);
+
+      if (cartDoc.exists()) {
+        const cartData = cartDoc.data()?.items || [];
+        // Validate and transform cart data
+        const validatedCart: CartItem[] = cartData.map((item: any) => ({
+          id: item.id || '',
+          name: item.name || '',
+          price: Number(item.price) || 0, // Ensure price is a number
+          quantity: Number(item.quantity) || 1
+        }));
+        setCart(validatedCart);
+      } else {
+        setCart([]);
       }
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+      setCart([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [cart, isClient]);
+  };
 
-  const addToCart = (item: CartItem) => {
+  // Save entire cart to Firestore
+  const saveCartToFirestore = async (userId: string, cartItems: CartItem[]) => {
+    if (!userId) return;
+
+    try {
+      const cartDocRef = doc(db, 'carts', userId);
+      await setDoc(cartDocRef, { items: cartItems });
+    } catch (error) {
+      console.error('Error saving cart:', error);
+    }
+  };
+
+  const addToCart = async (item: CartItem) => {
+    if (!user) return;
+
     setCart((prev) => {
       const existingItem = prev.find((cartItem) => cartItem.id === item.id);
       if (existingItem) {
-        return prev.map((cartItem) =>
+        const updatedCart = prev.map((cartItem) =>
           cartItem.id === item.id
             ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
             : cartItem
         );
+        saveCartToFirestore(user.uid, updatedCart);
+        return updatedCart;
       }
-      return [...prev, item];
+      const newCart = [...prev, { ...item, price: Number(item.price) }]; // Ensure price is a number
+      saveCartToFirestore(user.uid, newCart);
+      return newCart;
     });
   };
 
-  const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+  const removeFromCart = async (id: string) => {
+    if (!user) return;
+
+    setCart((prev) => {
+      const updatedCart = prev.filter((item) => item.id !== id);
+      saveCartToFirestore(user.uid, updatedCart);
+      return updatedCart;
+    });
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = async (id: string, quantity: number) => {
+    if (!user) return;
+
     if (quantity <= 0) {
-      removeFromCart(id);
+      await removeFromCart(id);
       return;
     }
-    setCart((prev) => 
-      prev.map((item) => 
+
+    setCart((prev) => {
+      const updatedCart = prev.map((item) => 
         item.id === id ? { ...item, quantity } : item
-      )
-    );
+      );
+      saveCartToFirestore(user.uid, updatedCart);
+      return updatedCart;
+    });
   };
 
-  const clearCart = () => {
-    setCart([]);
-    if (isClient) {
-      localStorage.removeItem('cart');
+  const clearCart = async () => {
+    if (!user) return;
+
+    try {
+      const cartDocRef = doc(db, 'carts', user.uid);
+      await setDoc(cartDocRef, { items: [] }); // Use setDoc instead of deleteDoc to maintain the document
+      setCart([]);
+    } catch (error) {
+      console.error('Error clearing cart:', error);
     }
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}>
+    <CartContext.Provider 
+      value={{ 
+        cart, 
+        addToCart, 
+        removeFromCart, 
+        updateQuantity, 
+        clearCart,
+        isLoading 
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

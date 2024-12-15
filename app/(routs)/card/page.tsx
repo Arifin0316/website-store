@@ -8,8 +8,11 @@ const CartPage = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } = useCart();
 
   const calculateTotal = () => {
-    
-    return cart.reduce((total, item) => total + (parseFloat(item.price) * item.quantity), 0);
+    // Ensure price is converted to number and handle potential NaN
+    return cart.reduce((total, item) => {
+      const itemTotal = Number(item.price) * item.quantity;
+      return isNaN(itemTotal) ? total : total + itemTotal;
+    }, 0);
   };
 
   return (
@@ -36,7 +39,7 @@ const CartPage = () => {
               >
                 <div className="flex-1">
                   <p className="font-semibold text-lg text-gray-800">{item.name}</p>
-                  <Currency  value={item.price}  />
+                  <Currency value={item.price} />
                 </div>
 
                 <div className="flex items-center gap-4">

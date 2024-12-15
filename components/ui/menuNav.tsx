@@ -2,11 +2,30 @@
 
 import Link from 'next/link';
 import { Button } from './button';
-import { useCart } from '@/context/CartContext'; // Pastikan path import benar
+import { useCart } from '@/context/CartContext';
 import { ShoppingCart } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth'; // Sesuaikan path import
+import { useRouter } from 'next/navigation';
 
 const MenuNav = () => {
-  const { cart } = useCart(); // Ambil cart dari context
+  const { cart } = useCart();
+  const { user, logout } = useAuth(); // Gunakan hook useAuth
+  const router = useRouter();
+
+  const handleAuthAction = async () => {
+    if (user) {
+      // Jika sudah login, maka logout
+      try {
+        await logout();
+        router.push('/login'); // Redirect ke halaman login setelah logout
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    } else {
+      // Jika belum login, redirect ke halaman login
+      router.push('/login');
+    }
+  };
 
   return (
     <div>
@@ -31,11 +50,14 @@ const MenuNav = () => {
         {/* Separator */}
         <span className="bg-gray-300 w-[1px] h-6"></span>
 
-        {/* Tombol Login */}
+        {/* Tombol Login/Logout */}
         <div className="flex items-center space-x-3">
-          <Link href="/login">
-            <Button variant="elegant">login</Button>
-          </Link>
+          <Button 
+            variant="elegant" 
+            onClick={handleAuthAction}
+          >
+            {user ? 'Logout' : 'Login'}
+          </Button>
         </div>
       </nav>
     </div>
