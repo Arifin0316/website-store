@@ -10,16 +10,13 @@ const MAX_QUANTITY = 99;
 
 const CartPage = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } = useCart();
-
   const [isLoading, setIsLoading] = useState(false);
-
-
 
   const calculateTotal = () => {
     return cart.reduce((total, item) => {
       const price = Number(item.price);
       if (isNaN(price) || price < 0) return total;
-      return total + (price * item.quantity);
+      return total + price * item.quantity;
     }, 0);
   };
 
@@ -33,73 +30,98 @@ const CartPage = () => {
     }
   };
 
-  const handleRemoveItem = async (itemId: string) => {
-    const result = await Swal.fire({
-      title: 'apakah kamu yakin?',
-      text: "kamu akan menghapus item ini?",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'hapus!',
-      cancelButtonText: 'Batal'
-    });
-
-    if (result.isConfirmed) {
-      setIsLoading(true);
-      try {
-        await removeFromCart(itemId);
-        Swal.fire(
-          'Deleted!',
-          'Item berhasil di hapus.',
-          'success'
-        );
-      } catch (error) {
-        Swal.fire(
-          'Error!',
-          'prodak gagal dihapus.',
-          'error'
-        );
-      } finally {
-        setIsLoading(false);
+  const handleCheckout = async () => {
+    if (cart.length === 0) {
+      Swal.fire('Keranjang Kosong!', 'Tambahkan item ke keranjang sebelum checkout.', 'warning');
+      return;
+    }
+  
+    setIsLoading(true);
+    try {
+      const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      
+      const totalAmount = calculateTotal();
+      const itemName = cart.length > 1 
+        ? `${cart[0].name} dan ${cart.length - 1} item lainnya`
+        : cart[0].name;
+  
+      const orderData = {
+        id: orderId,
+        name: itemName,
+        price: totalAmount,
+        quantity: 1,
+      };
+  
+      const response = await fetch('/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+  
+      const { token } = await response.json();
+  
+      if (typeof window.snap === 'undefined') {
+        throw new Error('Midtrans Snap belum dimuat. Mohon tunggu sebentar dan coba lagi.');
+      }
+  
+      window.snap.pay(token, {
+        onSuccess: function(result) {
+          Swal.fire('Success!', 'Pembayaran berhasil!', 'success');
+          clearCart();
+        },
+        onPending: function(result) {
+          Swal.fire('Info', 'Pembayaran dalam proses', 'info');
+        },
+        onError: function(result) {
+          Swal.fire('Error!', 'Pembayaran gagal', 'error');
+        },
+        onClose: function() {
+          setIsLoading(false);
+        }
+      });
+    } catch (error) {
+      Swal.fire('Error!', 
+        error instanceof Error ? error.message : 'Terjadi kesalahan saat memproses pembayaran', 
+        'error'
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleClearCart = async () => {
-    const result = await Swal.fire({
-      title: 'apakah kamu yakin?',
-      text: "kamu akan menghapus semua item!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'hapus!',
-      cancelButtonText: 'Batal'
-    });
-
-    if (result.isConfirmed) {
-      setIsLoading(true);
-      try {
-        await clearCart();
-        Swal.fire(
-          'Cleared!',
-          'Your cart has been cleared.',
-          'success'
-        );
-      } catch (error) {
-        Swal.fire(
-          'Error!',
-          'Failed to clear cart.',
-          'error'
-        );
-      } finally {
-        setIsLoading(false);
+  useEffect(() => {
+    const midtransScriptUrl = 'https://app.sandbox.midtrans.com/snap/snap.js';
+    const myMidtransClientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || '';
+  
+    let scriptTag = document.createElement('script');
+    scriptTag.src = midtransScriptUrl;
+    scriptTag.setAttribute('data-client-key', myMidtransClientKey);
+  
+    const handleScriptLoad = () => {
+      console.log('Midtrans Snap loaded successfully');
+      // Memastikan window.snap sudah tersedia
+      if (typeof window.snap === 'undefined') {
+        console.error('Snap object not found');
       }
-    }
-  };
-
-
+    };
+  
+    scriptTag.addEventListener('load', handleScriptLoad);
+    scriptTag.addEventListener('error', () => {
+      console.error('Failed to load Midtrans Snap');
+    });
+  
+    document.body.appendChild(scriptTag);
+  
+    return () => {
+      document.body.removeChild(scriptTag);
+    };
+  }, []);
 
   return (
     <main className="container mx-auto px-4 py-12 max-w-4xl">
@@ -119,7 +141,7 @@ const CartPage = () => {
         <div className="space-y-6">
           <div role="list" className="divide-y divide-gray-200 bg-white rounded-xl shadow-lg overflow-hidden">
             {cart.map((item) => (
-              <div 
+              <div
                 key={item.id}
                 role="listitem"
                 className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-gray-50 transition-colors duration-200"
@@ -131,7 +153,7 @@ const CartPage = () => {
 
                 <div className="flex items-center gap-4">
                   <div className="flex items-center bg-gray-100 rounded-lg">
-                    <button 
+                    <button
                       onClick={() => handleQuantityUpdate(item.id, Math.max(0, item.quantity - 1))}
                       className="p-2 hover:bg-gray-200 rounded-l-lg transition-colors disabled:opacity-50"
                       disabled={item.quantity <= 1 || isLoading}
@@ -140,7 +162,7 @@ const CartPage = () => {
                       <Minus className="w-5 h-5 text-gray-600" />
                     </button>
                     <span className="w-12 text-center font-medium">{item.quantity}</span>
-                    <button 
+                    <button
                       onClick={() => handleQuantityUpdate(item.id, item.quantity + 1)}
                       className="p-2 hover:bg-gray-200 rounded-r-lg transition-colors disabled:opacity-50"
                       disabled={item.quantity >= MAX_QUANTITY || isLoading}
@@ -149,9 +171,8 @@ const CartPage = () => {
                       <Plus className="w-5 h-5 text-gray-600" />
                     </button>
                   </div>
-                  
-                  <button 
-                    onClick={() => handleRemoveItem(item.id)}
+                  <button
+                    onClick={() => removeFromCart(item.id)}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                     disabled={isLoading}
                     aria-label="Remove item"
@@ -172,15 +193,8 @@ const CartPage = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-end">
-              <button 
-                onClick={handleClearCart}
-                className="px-6 py-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200 font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-                disabled={isLoading}
-              >
-                <Trash2 className="w-5 h-5" />
-                Clear Cart
-              </button>
-              <button 
+              <button
+                onClick={handleCheckout}
                 className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 font-medium shadow-md disabled:opacity-50"
                 disabled={isLoading}
               >

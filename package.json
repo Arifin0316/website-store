@@ -17,6 +17,7 @@
     "clsx": "^2.1.1",
     "firebase": "^11.1.0",
     "lucide-react": "^0.461.0",
+    "midtrans-client": "^1.4.2",
     "next": "14.2.3",
     "query-string": "^9.1.1",
     "react": "^18",
