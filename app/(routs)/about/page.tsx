@@ -4,8 +4,8 @@ import Image from 'next/image';
 import { Heart, ShoppingBag, Star, Truck } from 'lucide-react';
 import Container from '@/components/ui/container';
 import sara from '@/public/about-images/sara.jpg';
-import rina from '@/public/about-images/rina.jpg';
-import michael from '@/public/about-images/michael.jpg';
+import rina from '@/public/about-images/Rina.jpg';
+import michael from '@/public/about-images/Michael.jpg';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
