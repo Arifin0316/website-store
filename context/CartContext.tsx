@@ -119,8 +119,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (result.isConfirmed) {
         router.push('/login');
       }
-      
       return;
+    }else{
+      const result = await Swal.fire({
+        icon: 'success',
+        title: 'Produk Ditambahkan',
+        text: `${item.name} berhasil ditambahkan ke keranjang belanja`,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer)
+          toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+      });
     }
 
     setCart((prev) => {

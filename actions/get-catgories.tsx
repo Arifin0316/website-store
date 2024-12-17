@@ -1,11 +1,28 @@
 import { Catagori } from "@/types";
 
-const Ulr = `${process.env.PUBLIC_API_URL}/catagoris`;
-
+const Url = `${process.env.PUBLIC_API_URL}/catagoris`;
 
 const getCatgories = async (): Promise<Catagori[]> => {
-    const res = await fetch(Ulr);
-    return res.json();
+  try {
+    const res = await fetch(Url, {
+      cache: 'no-store', // Disable caching
+      // Atau untuk Next.js 13+
+      next: { 
+        revalidate: 0, // Revalidate setiap saat
+        tags: ['categories'] // Optional: untuk revalidasi spesifik
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return []; // Kembalikan array kosong jika error
+  }
 };
 
-export default getCatgories
+export default getCatgories;

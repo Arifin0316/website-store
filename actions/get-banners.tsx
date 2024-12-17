@@ -1,12 +1,28 @@
 import { Banner } from "@/types";
 
-
-const Ulr = `${process.env.PUBLIC_API_URL}/benners`;
-
+const Url = `${process.env.PUBLIC_API_URL}/benners`;
 
 const getBanner = async (): Promise<Banner[]> => {
-    const res = await fetch(Ulr);
-    return res.json();
+ try {
+   const res = await fetch(Url, {
+     cache: 'no-store', // Disable caching
+     // Atau untuk Next.js 13+
+     next: { 
+       revalidate: 0, // Revalidate setiap saat
+       tags: ['banners'] // Optional: untuk revalidasi spesifik
+     }
+   });
+
+   if (!res.ok) {
+     throw new Error(`HTTP error! status: ${res.status}`);
+   }
+
+   const data = await res.json();
+   return data;
+ } catch (error) {
+   console.error("Error fetching banners:", error);
+   return []; // Kembalikan array kosong jika error
+ }
 };
 
-export default getBanner
+export default getBanner;

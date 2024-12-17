@@ -10,19 +10,24 @@ interface Query {
 
 const getProdaks = async (query: Query): Promise<Prodak[]> => {
   try {
-    // Membuat query string dari parameter
     const queryString = qs.stringify(query, { skipNull: true, skipEmptyString: true });
     const fullUrl = `${URL}?${queryString}`;
 
-    // Fetch data dari API
-    const res = await fetch(fullUrl);
+    const res = await fetch(fullUrl, {
+      // Tambahkan cache configuration
+      cache: 'no-store', // Untuk data dinamis
+      // atau 
+      next: { revalidate: 0 } // Untuk Next.js
+    });
 
-    // Memeriksa apakah respons berhasil
     if (!res.ok) {
+      const errorText = await res.text(); // Dapatkan pesan error
+      console.error('Error response:', errorText);
       throw new Error(`HTTP error! status: ${res.status}`);
     }
 
-    return await res.json();
+    const data = await res.json();
+    return data;
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];
