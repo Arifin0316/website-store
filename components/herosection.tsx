@@ -33,7 +33,7 @@ const ImageSlider: React.FC<SliderProps> = ({ images, height = 'h-[60vh]', autoP
   };
 
   return (
-    <div className={`relative w-full rounded-2xl group ${height} overflow-hidden ${className}`}>
+    <div className={`relative w-full rounded-2xl h-[180px] md:h-full group ${height} overflow-hidden ${className}`}>
       <div
         className="flex transition-transform duration-700 ease-in-out"
         style={{

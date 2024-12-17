@@ -42,7 +42,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         <div className="bg-white shadow-2xl rounded-2xl overflow-hidden">
           <div className="p-8">
