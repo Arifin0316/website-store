@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server';
 // Inisialisasi Midtrans
 let snap = new Midtrans.Snap({
   isProduction: false,
-  serverKey: process.env.MIDTRANS_SERVER_KEY || '',
-  clientKey: process.env.MIDTRANS_CLIENT_KEY || '',
+  serverKey: 'SB-Mid-server-xDQCV_KcmXFtFN_qqPNPAQr6',
+  clientKey: 'SB-Mid-client-_8Cz3bAlA4n5zYOZ',
 });
 
 export async function POST(res: Request) {
