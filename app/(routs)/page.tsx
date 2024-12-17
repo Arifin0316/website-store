@@ -15,7 +15,7 @@ const HomePage = async () => {
   return (
     <div className="bg-gray-100 py-12 ">
       <Container>
-        <HeroSection images={images} objectFit="fill" autoPlayInterval={15000} />
+        <HeroSection images={images} objectFit="contain" autoPlayInterval={15000} />
         <div className="flex flex-col gap-y-8 px-4 sm:px-6 lg:px-8 pt-12">
           <ProdakList title="prodak ungulan" item={Prodak} />
         </div>
